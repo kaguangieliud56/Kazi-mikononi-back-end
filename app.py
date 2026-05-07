@@ -1,7 +1,6 @@
 from flask import Flask
 
 from config import Config
-
 from extensions import (
     db,
     migrate,
@@ -13,17 +12,17 @@ from extensions import (
 def create_app():
 
     app = Flask(__name__)
-
     app.config.from_object(Config)
 
-    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     socketio.init_app(app)
     cors.init_app(app)
 
-    # Test route
+    # load models
+    import models
+
     @app.route("/")
     def home():
         return {
