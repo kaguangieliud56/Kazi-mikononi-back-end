@@ -1,8 +1,8 @@
-"""Initial full schema
+"""clean reset
 
-Revision ID: bf0fb8e59e6c
+Revision ID: 484a7b548933
 Revises: 
-Create Date: 2026-05-07 11:23:54.730809
+Create Date: 2026-05-09 10:11:23.073693
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'bf0fb8e59e6c'
+revision = '484a7b548933'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,11 +28,13 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('full_name', sa.String(length=120), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
-    sa.Column('password', sa.String(length=255), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=False),
     sa.Column('role', sa.String(length=20), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=True),
     sa.Column('location', sa.String(length=120), nullable=True),
     sa.Column('profile_image', sa.String(length=255), nullable=True),
+    sa.Column('bio', sa.Text(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
@@ -69,14 +71,28 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('worker_availability',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('worker_id', sa.Integer(), nullable=True),
+    sa.Column('day_of_week', sa.String(length=20), nullable=True),
+    sa.Column('start_time', sa.String(length=10), nullable=True),
+    sa.Column('end_time', sa.String(length=10), nullable=True),
+    sa.ForeignKeyConstraint(['worker_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('worker_profiles',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('title', sa.String(length=120), nullable=True),
+    sa.Column('phone', sa.String(length=20), nullable=True),
     sa.Column('bio', sa.Text(), nullable=True),
     sa.Column('experience_years', sa.Integer(), nullable=True),
-    sa.Column('availability', sa.String(length=50), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('hourly_rate', sa.Float(), nullable=True),
+    sa.Column('profile_image', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('applications',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -105,6 +121,7 @@ def downgrade():
     op.drop_table('worker_skills')
     op.drop_table('applications')
     op.drop_table('worker_profiles')
+    op.drop_table('worker_availability')
     op.drop_table('ratings')
     op.drop_table('messages')
     op.drop_table('jobs')

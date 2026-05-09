@@ -1,30 +1,34 @@
 from extensions import db
 from datetime import datetime
 
+
 class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
 
+    # BASIC INFO
     full_name = db.Column(db.String(120), nullable=False)
-
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
 
-    password = db.Column(db.String(255), nullable=False)
+    # ROLE SYSTEM (core of your app)
+    role = db.Column(db.String(20), nullable=False)
+    # client | worker
 
-    role = db.Column(db.String(20), nullable=False)  
-    # roles: client | worker
+    # CONTACT / PROFILE INFO
+    phone = db.Column(db.String(20), unique=True)
+    location = db.Column(db.String(120))
+    profile_image = db.Column(db.String(255))
 
-    phone = db.Column(db.String(20), unique=True, nullable=True)
+    # OPTIONAL WORKER INFO (not duplicated skills here)
+    bio = db.Column(db.Text, nullable=True)
+    is_verified = db.Column(db.Boolean, default=False)
 
-    location = db.Column(db.String(120), nullable=True)
-
-    profile_image = db.Column(db.String(255), nullable=True)
-
+    # TIMESTAMP
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔗 RELATIONSHIPS (IMPORTANT)
-
+    # RELATIONSHIPS
     jobs = db.relationship("Job", backref="client", lazy=True)
 
     applications = db.relationship("Application", backref="applicant", lazy=True)
@@ -32,3 +36,18 @@ class User(db.Model):
     messages = db.relationship("Message", backref="sender", lazy=True)
 
     ratings = db.relationship("Rating", backref="user", lazy=True)
+
+    # IMPORTANT: skills handled via WorkerSkill table (NOT here)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "email": self.email,
+            "role": self.role,
+            "phone": self.phone,
+            "location": self.location,
+            "bio": self.bio,
+            "profile_image": self.profile_image,
+            "is_verified": self.is_verified,
+        }
