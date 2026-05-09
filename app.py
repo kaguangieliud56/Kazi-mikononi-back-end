@@ -23,6 +23,10 @@ def create_app():
     # load models
     import models
 
+# register blueprints
+    from modules.jobs.routes import jobs_bp 
+    
+    app.register_blueprint(jobs_bp)
     @app.route("/")
     def home():
         return {
