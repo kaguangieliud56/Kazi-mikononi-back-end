@@ -37,6 +37,9 @@ def create_app():
     from modules.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
+    from modules.applications.routes import applications_bp
+    app.register_blueprint(applications_bp)
+    
     @app.route("/")
     def home():
         return {
