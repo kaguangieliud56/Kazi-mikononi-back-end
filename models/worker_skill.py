@@ -5,6 +5,9 @@ class WorkerSkill(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    worker_id = db.Column(db.Integer, db.ForeignKey("worker_profiles.id"))
+    worker_id = db.Column(db.Integer, db.ForeignKey("worker_profiles.id"), nullable=False)
+    skill_id = db.Column(db.Integer, db.ForeignKey("skills.id"), nullable=False)
 
-    skill_id = db.Column(db.Integer, db.ForeignKey("skills.id"))
+    __table_args__ = (
+        db.UniqueConstraint("worker_id", "skill_id", name="unique_worker_skill"),
+    )

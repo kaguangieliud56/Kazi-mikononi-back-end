@@ -1,13 +1,12 @@
 from extensions import db
 from datetime import datetime
 
-
 class WorkerProfile(db.Model):
     __tablename__ = "worker_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
 
     title = db.Column(db.String(120))
     phone = db.Column(db.String(20))
@@ -19,6 +18,8 @@ class WorkerProfile(db.Model):
     profile_image = db.Column(db.String(255))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    skills = db.relationship("WorkerSkill", backref="worker_profile", lazy=True)
 
     def to_dict(self):
         return {
