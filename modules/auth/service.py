@@ -1,10 +1,11 @@
 from models.user import User
 from models.skill import Skill
 from models.worker_skill import WorkerSkill
+from models.worker_profile import WorkerProfile  # 🔥 ADD THIS
 from extensions import db
-from modules.auth.utils import hash_password
-from flask_jwt_extended import create_access_token
 from modules.auth.utils import hash_password, verify_password
+from flask_jwt_extended import create_access_token
+
 
 def register_user(data):
 
@@ -13,6 +14,7 @@ def register_user(data):
     if existing:
         return {"error": "Email already exists"}, 400
 
+    # 1. CREATE USER
     user = User(
         full_name=data["full_name"],
         email=data["email"],
@@ -24,10 +26,19 @@ def register_user(data):
     )
 
     db.session.add(user)
-    db.session.flush()  # get user.id before commit
+    db.session.flush()  # user.id ready
 
-    # 👇 ONLY WORKERS GET SKILLS
+    worker_profile = None
+
+    # 2. CREATE WORKER PROFILE IF WORKER
     if user.role == "worker":
+
+        worker_profile = WorkerProfile(
+            user_id=user.id
+        )
+
+        db.session.add(worker_profile)
+        db.session.flush()  # 🔥 worker_profile.id ready
 
         skills = data.get("skills", [])
 
@@ -41,12 +52,13 @@ def register_user(data):
                 db.session.flush()
 
             worker_skill = WorkerSkill(
-                worker_id=user.id,
+                worker_id=worker_profile.id,  # ✅ FIXED
                 skill_id=skill.id
             )
 
             db.session.add(worker_skill)
 
+    # 3. COMMIT EVERYTHING
     db.session.commit()
 
     token = create_access_token(identity=str(user.id))
@@ -56,7 +68,6 @@ def register_user(data):
         "token": token,
         "user": user.to_dict()
     }, 201
-
 
 def login_user(data):
 

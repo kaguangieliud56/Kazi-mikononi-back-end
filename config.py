@@ -6,8 +6,10 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
 
-    # SQLite database (local file)
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///kazi_mikononi.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///kazi_mikononi.db"
+    )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
