@@ -43,6 +43,9 @@ def create_app():
     from modules.ratings.routes import ratings_bp
     app.register_blueprint(ratings_bp)
 
+    from modules.messages.routes import messages_bp
+    app.register_blueprint(messages_bp)
+
     @app.route("/")
     def home():
         return {
