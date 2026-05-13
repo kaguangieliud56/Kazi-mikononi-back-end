@@ -23,17 +23,13 @@ def create_app():
     # load models
     import models
 
-
-# register blueprints
-    from modules.jobs.routes import jobs_bp 
-    
+    # register blueprints
+    from modules.jobs.routes import jobs_bp
     app.register_blueprint(jobs_bp)
 
     from modules.workers.routes import worker_bp
-
     app.register_blueprint(worker_bp, url_prefix="/workers")
 
-    # 🔥 ADD THIS (IMPORTANT)
     from modules.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/auth")
 
