@@ -48,6 +48,9 @@ def create_app():
    
     from realtime.socket import init_socket
     init_socket(app)
+
+    from modules.users.routes import users_bp
+    app.register_blueprint(users_bp)
     
     @app.route("/")
     def home():
