@@ -8,6 +8,8 @@ from extensions import (
     socketio,
     cors
 )
+from blacklist import BLACKLIST
+from extensions import mail
 
 def create_app():
 
@@ -17,8 +19,16 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+
+        return jwt_payload["jti"] in BLACKLIST
+    
+
     socketio.init_app(app)
     cors.init_app(app)
+    mail.init_app(app)
 
     # load models
     import models
