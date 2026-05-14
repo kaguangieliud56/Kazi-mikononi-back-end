@@ -45,7 +45,10 @@ def create_app():
 
     from modules.messages.routes import messages_bp
     app.register_blueprint(messages_bp)
-
+   
+    from realtime.socket import init_socket
+    init_socket(app)
+    
     @app.route("/")
     def home():
         return {
