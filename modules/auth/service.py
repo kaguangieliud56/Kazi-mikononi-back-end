@@ -140,10 +140,10 @@ def register_user(data):
         # -------------------------
         # SEND EMAIL
         # -------------------------
-        send_verification_email(
-            user.email,
-            verification_token
-        )
+        try:
+            send_verification_email(user.email, verification_token)
+        except Exception as e:
+            print("EMAIL FAILED:", str(e))
 
         # -------------------------
         # CREATE LOGIN TOKEN
