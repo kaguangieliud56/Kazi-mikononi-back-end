@@ -181,26 +181,54 @@ def register_user(data):
 
 
 def login_user(data):
+    """
+    Handles user login:
+    - validates input
+    - checks if user exists
+    - verifies password
+    - returns JWT token + user data
+    """
 
     try:
+        # -------------------------------
+        # 1. Validate input data
+        # -------------------------------
         if not data.get("email") or not data.get("password"):
             return {"error": "email and password are required"}, 400
 
+        # -------------------------------
+        # 2. Find user by email
+        # -------------------------------
         user = User.query.filter_by(email=data["email"]).first()
 
         if not user:
             return {"error": "Invalid credentials"}, 401
 
-        if not user.is_verified:
-            return {
-                "error": "Please verify your email before logging in"
-            }, 403
+        # -------------------------------
+        # 3. EMAIL VERIFICATION CHECK (DISABLED FOR DEV)
+        # -------------------------------
+        # Commented out for development/testing purposes
+        # Remove this block so users can log in without verifying email
 
+        # if not user.is_verified:
+        #     return {
+        #         "error": "Please verify your email before logging in"
+        #     }, 403
+
+        # -------------------------------
+        # 4. Verify password
+        # -------------------------------
         if not verify_password(user.password_hash, data["password"]):
             return {"error": "Invalid credentials"}, 401
 
+        # -------------------------------
+        # 5. Create JWT token
+        # -------------------------------
         token = create_access_token(identity=str(user.id))
 
+        # -------------------------------
+        # 6. Return success response
+        # -------------------------------
         return {
             "message": "Login successful",
             "token": token,
@@ -208,11 +236,13 @@ def login_user(data):
         }, 200
 
     except Exception as e:
+        # -------------------------------
+        # 7. Catch unexpected errors
+        # -------------------------------
         return {
             "error": "Login failed",
             "details": str(e)
         }, 500
-    
 
 def logout_user(jwt_data):
 
