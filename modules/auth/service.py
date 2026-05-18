@@ -10,7 +10,7 @@ from blacklist import BLACKLIST
 from itsdangerous import URLSafeTimedSerializer
 from itsdangerous.exc import SignatureExpired, BadSignature
 from flask import current_app
-from modules.auth.email import send_verification_email
+from modules.auth.resend_email import send_verification_email
 
 def generate_token(email):
     serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
