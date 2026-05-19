@@ -8,6 +8,12 @@ class Skill(db.Model):
 
     worker_skills = db.relationship("WorkerSkill", backref="skill", lazy=True)
 
+    worker_skills = db.relationship(
+    "WorkerSkill",
+    back_populates="skill",
+    cascade="all, delete-orphan"
+)
+
     def to_dict(self):
 
         return {
