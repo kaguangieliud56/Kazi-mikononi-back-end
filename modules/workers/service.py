@@ -109,6 +109,41 @@ def get_worker_skills(user_id):
         ]
     }, 200
 
+def get_all_workers():
+
+    workers = User.query.filter_by(role="worker").all()
+
+    workers_data = []
+
+    for worker in workers:
+
+        profile = WorkerProfile.query.filter_by(user_id=worker.id).first()
+
+        skills = WorkerSkill.query.filter_by(worker_id=worker.id).all()
+
+        workers_data.append({
+            "id": worker.id,
+            "name": worker.full_name,
+            "email": worker.email,
+            "location": worker.location,
+            "verified": worker.is_verified,
+
+            # profile data
+            "title": profile.title if profile else "Professional Worker",
+            "bio": profile.bio if profile else "",
+            "hourly_rate": profile.hourly_rate if profile else 500,
+            "profile_image": profile.profile_image if profile else None,
+
+            # skills
+            "skills": [
+                ws.skill.name for ws in skills
+            ]
+        })
+
+    return {
+        "workers": workers_data
+    }, 200
+
 def set_availability(user_id, data):
 
     day = data.get("day_of_week")

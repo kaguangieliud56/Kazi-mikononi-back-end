@@ -5,7 +5,8 @@ from .service import (create_or_update_profile, get_profile ,add_skill_to_worker
     remove_skill_from_worker,
     get_worker_skills,
     set_availability,
-    get_availability)
+    get_availability,
+    get_all_workers)
 
 worker_bp = Blueprint("workers", __name__)
 
@@ -80,5 +81,12 @@ def get_avail():
     user_id = get_jwt_identity()
 
     response, status = get_availability(user_id)
+
+    return jsonify(response), status
+
+@worker_bp.route("/", methods=["GET"])
+def get_all_workers_route():
+
+    response, status = get_all_workers()
 
     return jsonify(response), status
