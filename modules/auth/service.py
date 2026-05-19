@@ -108,24 +108,7 @@ def register_user(data):
             db.session.add(worker_profile)
             db.session.flush()
 
-            skills = data.get("skills", [])
-
-            for skill_name in skills:
-
-                skill = Skill.query.filter_by(name=skill_name).first()
-
-                if not skill:
-                    skill = Skill(name=skill_name)
-
-                    db.session.add(skill)
-                    db.session.flush()
-
-                worker_skill = WorkerSkill(
-                    worker_id=worker_profile.id,
-                    skill_id=skill.id
-                )
-
-                db.session.add(worker_skill)
+            
 
         # -------------------------
         # COMMIT TO DATABASE

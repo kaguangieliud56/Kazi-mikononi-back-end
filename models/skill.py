@@ -7,3 +7,10 @@ class Skill(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
 
     worker_skills = db.relationship("WorkerSkill", backref="skill", lazy=True)
+
+    def to_dict(self):
+
+        return {
+            "id": self.id,
+            "name": self.name
+        }
