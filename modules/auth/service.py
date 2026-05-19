@@ -97,9 +97,6 @@ def register_user(data):
             role=data["role"],
             phone=data.get("phone"),
             location=data.get("location"),
-            bio=data.get("bio"),
-
-            # 🔥 EMAIL NOT VERIFIED YET
             is_verified=False
         )
 
