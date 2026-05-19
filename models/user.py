@@ -45,7 +45,5 @@ class User(db.Model):
             "role": self.role,
             "phone": self.phone,
             "location": self.location,
-            "bio": self.bio,
-            "profile_image": self.profile_image,
             "is_verified": self.is_verified,
         }
