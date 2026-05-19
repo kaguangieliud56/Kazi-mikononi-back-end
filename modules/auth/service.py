@@ -111,10 +111,11 @@ def register_user(data):
         # -------------------------
         if user.role == "worker":
 
-            worker_profile = WorkerProfile(user_id=user.id)
+            existing_profile = WorkerProfile.query.filter_by(user_id=user.id).first()
 
-            db.session.add(worker_profile)
-            db.session.flush()
+            if not existing_profile:
+                worker_profile = WorkerProfile(user_id=user.id)
+                db.session.add(worker_profile)
 
             
 
@@ -123,18 +124,7 @@ def register_user(data):
         # -------------------------
         db.session.commit()
 
-        # -------------------------
-        # GENERATE EMAIL VERIFICATION TOKEN
-        # -------------------------
-        verification_token = generate_token(user.email)
 
-        # -------------------------
-        # SEND EMAIL
-        # -------------------------
-        try:
-            send_verification_email(user.email, verification_token)
-        except Exception as e:
-            print("EMAIL FAILED:", str(e))
 
         # -------------------------
         # CREATE LOGIN TOKEN
@@ -164,6 +154,8 @@ def register_user(data):
     # -------------------------
     except Exception as e:
         db.session.rollback()
+
+        print("REGISTER ERROR:", str(e))
 
         return {
             "error": "Internal server error",

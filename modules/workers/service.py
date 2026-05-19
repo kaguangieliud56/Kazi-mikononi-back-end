@@ -111,15 +111,14 @@ def create_or_update_profile(user_id, data):
 # =========================================================
 def get_profile(user_id):
 
-    profile = WorkerProfile.query.filter_by(
-        user_id=user_id
-    ).first()
+    profile = WorkerProfile.query.filter_by(user_id=user_id).first()
 
     if not profile:
         return {
-            "error": "Profile not found"
-        }, 404
-
+            "profile": None,
+            "skills": []
+        }, 200
+    
     skills = WorkerSkill.query.filter_by(
         worker_id=profile.id
     ).all()
