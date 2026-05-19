@@ -111,180 +111,23 @@ def create_or_update_profile(user_id, data):
 # =========================================================
 def get_profile(user_id):
 
-    try:
+    profile = WorkerProfile.query.filter_by(
+        user_id=user_id
+    ).first()
 
-        profile = get_worker_profile(user_id)
-
-        if not profile:
-            return {
-                "error": "Profile not found"
-            }, 404
-
-        skills = WorkerSkill.query.filter_by(
-            worker_id=profile.id
-        ).all()
-
+    if not profile:
         return {
-            "profile": {
-                **profile.to_dict(),
-                "skills": [
-                    {
-                        "id": ws.skill.id,
-                        "name": ws.skill.name
-                    }
-                    for ws in skills
-                ]
-            }
-        }, 200
+            "error": "Profile not found"
+        }, 404
 
-    except Exception as e:
+    skills = WorkerSkill.query.filter_by(
+        worker_id=profile.id
+    ).all()
 
-        return {
-            "error": "Failed to fetch profile",
-            "details": str(e)
-        }, 500
+    return {
+        "profile": {
+            **profile.to_dict(),
 
-
-# =========================================================
-# ADD SKILL
-# =========================================================
-def add_skill_to_worker(user_id, skill_name):
-
-    try:
-
-        profile = get_worker_profile(user_id)
-
-        if not profile:
-            return {
-                "error": "Profile not found"
-            }, 404
-
-        skill = Skill.query.filter_by(
-            name=skill_name
-        ).first()
-
-        # -----------------------------------------
-        # CREATE SKILL IF NOT EXIST
-        # -----------------------------------------
-        if not skill:
-
-            skill = Skill(
-                name=skill_name
-            )
-
-            db.session.add(skill)
-
-            db.session.flush()
-
-        # -----------------------------------------
-        # PREVENT DUPLICATES
-        # -----------------------------------------
-        existing = WorkerSkill.query.filter_by(
-            worker_id=profile.id,
-            skill_id=skill.id
-        ).first()
-
-        if existing:
-            return {
-                "message": "Skill already exists"
-            }, 200
-
-        # -----------------------------------------
-        # CREATE WORKER SKILL
-        # -----------------------------------------
-        worker_skill = WorkerSkill(
-            worker_id=profile.id,
-            skill_id=skill.id
-        )
-
-        db.session.add(worker_skill)
-
-        db.session.commit()
-
-        return {
-            "message": "Skill added successfully"
-        }, 201
-
-    except Exception as e:
-
-        db.session.rollback()
-
-        return {
-            "error": "Failed to add skill",
-            "details": str(e)
-        }, 500
-
-
-# =========================================================
-# REMOVE SKILL
-# =========================================================
-def remove_skill_from_worker(user_id, skill_name):
-
-    try:
-
-        profile = get_worker_profile(user_id)
-
-        if not profile:
-            return {
-                "error": "Profile not found"
-            }, 404
-
-        skill = Skill.query.filter_by(
-            name=skill_name
-        ).first()
-
-        if not skill:
-            return {
-                "error": "Skill not found"
-            }, 404
-
-        worker_skill = WorkerSkill.query.filter_by(
-            worker_id=profile.id,
-            skill_id=skill.id
-        ).first()
-
-        if not worker_skill:
-            return {
-                "error": "Skill not assigned"
-            }, 404
-
-        db.session.delete(worker_skill)
-
-        db.session.commit()
-
-        return {
-            "message": "Skill removed successfully"
-        }, 200
-
-    except Exception as e:
-
-        db.session.rollback()
-
-        return {
-            "error": "Failed to remove skill",
-            "details": str(e)
-        }, 500
-
-
-# =========================================================
-# GET WORKER SKILLS
-# =========================================================
-def get_worker_skills(user_id):
-
-    try:
-
-        profile = get_worker_profile(user_id)
-
-        if not profile:
-            return {
-                "error": "Profile not found"
-            }, 404
-
-        skills = WorkerSkill.query.filter_by(
-            worker_id=profile.id
-        ).all()
-
-        return {
             "skills": [
                 {
                     "id": ws.skill.id,
@@ -292,15 +135,125 @@ def get_worker_skills(user_id):
                 }
                 for ws in skills
             ]
+        }
+    }, 200
+
+# =========================================================
+# ADD SKILL
+# =========================================================
+def add_skill_to_worker(user_id, skill_name):
+
+    profile = WorkerProfile.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not profile:
+        return {
+            "error": "Worker profile not found"
+        }, 404
+
+    skill = Skill.query.filter_by(
+        name=skill_name
+    ).first()
+
+    if not skill:
+
+        skill = Skill(name=skill_name)
+
+        db.session.add(skill)
+        db.session.flush()
+
+    existing = WorkerSkill.query.filter_by(
+        worker_id=profile.id,
+        skill_id=skill.id
+    ).first()
+
+    if existing:
+        return {
+            "message": "Skill already exists"
         }, 200
 
-    except Exception as e:
+    worker_skill = WorkerSkill(
+        worker_id=profile.id,
+        skill_id=skill.id
+    )
 
+    db.session.add(worker_skill)
+
+    db.session.commit()
+
+    return {
+        "message": "Skill added successfully"
+    }, 201
+
+# =========================================================
+# REMOVE SKILL
+# =========================================================
+def remove_skill_from_worker(user_id, skill_name):
+
+    profile = WorkerProfile.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not profile:
         return {
-            "error": "Failed to fetch skills",
-            "details": str(e)
-        }, 500
+            "error": "Worker profile not found"
+        }, 404
 
+    skill = Skill.query.filter_by(
+        name=skill_name
+    ).first()
+
+    if not skill:
+        return {
+            "error": "Skill not found"
+        }, 404
+
+    worker_skill = WorkerSkill.query.filter_by(
+        worker_id=profile.id,
+        skill_id=skill.id
+    ).first()
+
+    if not worker_skill:
+        return {
+            "error": "Skill not assigned"
+        }, 404
+
+    db.session.delete(worker_skill)
+
+    db.session.commit()
+
+    return {
+        "message": "Skill removed successfully"
+    }, 200
+
+# =========================================================
+# GET WORKER SKILLS
+# =========================================================
+def get_worker_skills(user_id):
+
+    profile = WorkerProfile.query.filter_by(
+        user_id=user_id
+    ).first()
+
+    if not profile:
+        return {
+            "error": "Worker profile not found"
+        }, 404
+
+    skills = WorkerSkill.query.filter_by(
+        worker_id=profile.id
+    ).all()
+
+    return {
+        "skills": [
+            {
+                "id": ws.skill.id,
+                "name": ws.skill.name
+            }
+            for ws in skills
+        ]
+    }, 200
 
 # =========================================================
 # SET AVAILABILITY

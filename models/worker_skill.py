@@ -11,3 +11,8 @@ class WorkerSkill(db.Model):
     __table_args__ = (
         db.UniqueConstraint("worker_id", "skill_id", name="unique_worker_skill"),
     )
+    
+    skill = db.relationship(
+    "Skill",
+    backref="worker_skills"
+)

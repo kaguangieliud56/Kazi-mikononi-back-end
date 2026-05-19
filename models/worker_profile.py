@@ -2,9 +2,13 @@ from extensions import db
 from datetime import datetime
 
 class WorkerProfile(db.Model):
+
     __tablename__ = "worker_profiles"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     user_id = db.Column(
         db.Integer,
@@ -14,7 +18,9 @@ class WorkerProfile(db.Model):
     )
 
     title = db.Column(db.String(120))
+
     phone = db.Column(db.String(20))
+
     bio = db.Column(db.Text)
 
     experience_years = db.Column(db.Integer)
@@ -39,21 +45,8 @@ class WorkerProfile(db.Model):
         lazy=True
     )
 
-    profile_completed = db.Column(
-    db.Boolean,
-    default=False
-    )
-
-    user = db.relationship(
-    "User",
-    backref=db.backref(
-        "worker_profile",
-        uselist=False
-    )
-)
-    
-
     def to_dict(self):
+
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -63,5 +56,5 @@ class WorkerProfile(db.Model):
             "experience_years": self.experience_years,
             "hourly_rate": self.hourly_rate,
             "profile_image": self.profile_image,
-            "profile_completed": self.profile_completed,
+            "profile_completed": self.profile_completed
         }

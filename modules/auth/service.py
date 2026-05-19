@@ -79,6 +79,14 @@ def register_user(data):
         if existing:
             return {"error": "Email already exists"}, 400
 
+
+        allowed_roles = ["worker", "client"]
+
+        if data["role"] not in allowed_roles:
+            return {
+                "error": "Invalid role"
+            }, 400
+
         # -------------------------
         # CREATE USER
         # -------------------------
