@@ -138,3 +138,31 @@ def remove_job(job_id):
         return jsonify({"error": error}), status_code
 
     return jsonify({"message": "Job deleted successfully"}), 200
+
+@jobs_bp.route("/mine", methods=["GET"])
+@jwt_required()
+def get_my_jobs():
+    user_id = int(get_jwt_identity())
+
+    jobs = get_all_jobs()  # or better: filter in service
+
+    my_jobs = [j for j in jobs if j.client_id == user_id]
+
+    return jsonify([
+        {
+            "id": j.id,
+            "title": j.title,
+            "description": j.description,
+            "category": j.category,
+            "budget": j.budget,
+            "location": j.location,
+            "status": j.status,
+            "urgency": j.urgency,
+            "duration": j.duration,
+            "contact_method": j.contact_method,
+            "image_url": j.image_url,
+            "client_id": j.client_id,
+            "created_at": j.created_at.isoformat()
+        }
+        for j in my_jobs
+    ]), 200
