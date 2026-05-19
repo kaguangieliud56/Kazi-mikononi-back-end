@@ -9,11 +9,11 @@ class Application(db.Model):
     message = db.Column(db.Text, nullable=True)
 
     status = db.Column(db.String(20), default="pending")
-    # pending | accepted | rejected
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔗 relationships
     job_id = db.Column(db.Integer, db.ForeignKey("jobs.id"), nullable=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    user = db.relationship("User", backref="applications")

@@ -45,6 +45,11 @@ def list_applications(job_id):
             "id": a.id,
             "job_id": a.job_id,
             "user_id": a.user_id,
+
+            # 👇 NEW
+            "worker_name": a.user.full_name,
+            "worker_email": a.user.email,
+
             "message": a.message,
             "status": a.status,
             "created_at": a.created_at.isoformat()
