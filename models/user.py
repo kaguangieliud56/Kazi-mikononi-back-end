@@ -19,10 +19,8 @@ class User(db.Model):
     # CONTACT / PROFILE INFO
     phone = db.Column(db.String(20), unique=True)
     location = db.Column(db.String(120))
-    profile_image = db.Column(db.String(255))
-
+    
     # OPTIONAL WORKER INFO (not duplicated skills here)
-    bio = db.Column(db.Text, nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
 
     # TIMESTAMP

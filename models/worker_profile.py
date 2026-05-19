@@ -42,6 +42,14 @@ class WorkerProfile(db.Model):
     profile_completed = db.Column(
     db.Boolean,
     default=False
+    )
+
+    user = db.relationship(
+    "User",
+    backref=db.backref(
+        "worker_profile",
+        uselist=False
+    )
 )
     
 
