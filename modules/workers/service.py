@@ -7,6 +7,7 @@ from models.skill import Skill
 from models.worker_skill import WorkerSkill
 from models.worker_profile import WorkerProfile
 from models.worker_availability import WorkerAvailability
+from models.rating import Rating
 
 
 # =========================================================
@@ -358,13 +359,26 @@ def get_availability(user_id):
 # =========================================================
 # GET ALL WORKERS
 # =========================================================
+def get_worker_rating_summary(worker_id):
+
+    ratings = Rating.query.filter_by(worker_id=worker_id).all()
+
+    if not ratings:
+        return 0, 0
+
+    avg = round(sum(r.score for r in ratings) / len(ratings), 1)
+    count = len(ratings)
+
+    return avg, count
+
+
+# -------------------------------------------------
+# GET ALL WORKERS
+# -------------------------------------------------
 def get_all_workers():
 
     try:
-
-        workers = User.query.filter_by(
-            role="worker"
-        ).all()
+        workers = User.query.filter_by(role="worker").all()
 
         workers_data = []
 
@@ -378,6 +392,9 @@ def get_all_workers():
             skills = WorkerSkill.query.filter_by(
                 worker_id=profile.id
             ).all()
+
+            # ⭐ GET REAL RATING HERE
+            rating_avg, rating_count = get_worker_rating_summary(worker.id)
 
             workers_data.append({
 
@@ -404,9 +421,14 @@ def get_all_workers():
                 # SKILLS
                 # -----------------------------------------
                 "skills": [
-                    ws.skill.name
-                    for ws in skills
-                ]
+                    ws.skill.name for ws in skills
+                ],
+
+                # -----------------------------------------
+                # ⭐ RATINGS (NEW)
+                # -----------------------------------------
+                "rating": rating_avg or 0,
+                "reviews_count": rating_count or 0
             })
 
         return {
