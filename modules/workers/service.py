@@ -441,3 +441,56 @@ def get_all_workers():
             "error": "Failed to fetch workers",
             "details": str(e)
         }, 500
+    
+
+def get_worker(worker_id):
+
+    try:
+        worker = User.query.get(worker_id)
+
+        if not worker or worker.role != "worker":
+            return {"error": "Worker not found"}, 404
+
+        profile = get_worker_profile(worker_id)
+
+        if not profile:
+            return {"error": "Profile not found"}, 404
+
+        # skills
+        skills = WorkerSkill.query.filter_by(worker_id=profile.id).all()
+
+        # ratings
+        avg_rating, total_reviews = get_worker_rating_summary(worker_id)
+
+        return {
+            "worker": {
+                # USER
+                "id": worker.id,
+                "name": worker.full_name,
+                "email": worker.email,
+                "location": worker.location,
+                "verified": worker.is_verified,
+
+                # PROFILE
+                "title": profile.title,
+                "bio": profile.bio,
+                "hourly_rate": profile.hourly_rate,
+                "experience_years": profile.experience_years,
+                "profile_image": profile.profile_image,
+
+                # SKILLS
+                "skills": [
+                    ws.skill.name for ws in skills
+                ],
+
+                # RATINGS (REAL)
+                "rating": avg_rating,
+                "reviews_count": total_reviews
+            }
+        }, 200
+
+    except Exception as e:
+        return {
+            "error": "Failed to fetch worker",
+            "details": str(e)
+        }, 500

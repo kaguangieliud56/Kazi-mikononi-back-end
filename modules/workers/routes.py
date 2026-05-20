@@ -15,7 +15,8 @@ from .service import (
     get_worker_skills,
     set_availability,
     get_availability,
-    get_all_workers
+    get_all_workers,
+    get_worker
 )
 
 worker_bp = Blueprint(
@@ -150,5 +151,13 @@ def get_avail():
 def get_all_workers_route():
 
     response, status = get_all_workers()
+
+    return jsonify(response), status
+
+
+@worker_bp.route("/<int:worker_id>", methods=["GET"])
+def fetch_worker(worker_id):
+
+    response, status = get_worker(worker_id)
 
     return jsonify(response), status
