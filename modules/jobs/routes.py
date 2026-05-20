@@ -9,9 +9,14 @@ from modules.jobs.service import (
     delete_job
 )
 
+from models.job import Job   # IMPORTANT FIX (needed for /mine)
+
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/jobs")
 
 
+# =========================
+# CREATE JOB
+# =========================
 @jobs_bp.route("/", methods=["POST"])
 @jwt_required()
 def post_job():
@@ -46,6 +51,9 @@ def post_job():
     }), 201
 
 
+# =========================
+# GET ALL JOBS
+# =========================
 @jobs_bp.route("/", methods=["GET"])
 def list_jobs():
     location = request.args.get("location")
@@ -72,6 +80,9 @@ def list_jobs():
     ]), 200
 
 
+# =========================
+# GET SINGLE JOB
+# =========================
 @jobs_bp.route("/<int:job_id>", methods=["GET"])
 def get_job(job_id):
     job = get_job_by_id(job_id)
@@ -96,6 +107,9 @@ def get_job(job_id):
     }), 200
 
 
+# =========================
+# UPDATE JOB
+# =========================
 @jobs_bp.route("/<int:job_id>", methods=["PUT"])
 @jwt_required()
 def edit_job(job_id):
@@ -126,6 +140,9 @@ def edit_job(job_id):
     }), 200
 
 
+# =========================
+# DELETE JOB
+# =========================
 @jobs_bp.route("/<int:job_id>", methods=["DELETE"])
 @jwt_required()
 def remove_job(job_id):
@@ -139,14 +156,16 @@ def remove_job(job_id):
 
     return jsonify({"message": "Job deleted successfully"}), 200
 
+
+# =========================
+# MY JOBS (CLIENT DASHBOARD)
+# =========================
 @jobs_bp.route("/mine", methods=["GET"])
 @jwt_required()
 def get_my_jobs():
     user_id = int(get_jwt_identity())
 
-    jobs = get_all_jobs()  # or better: filter in service
-
-    my_jobs = [j for j in jobs if j.client_id == user_id]
+    jobs = Job.query.filter_by(client_id=user_id).all()
 
     return jsonify([
         {
@@ -164,5 +183,5 @@ def get_my_jobs():
             "client_id": j.client_id,
             "created_at": j.created_at.isoformat()
         }
-        for j in my_jobs
+        for j in jobs
     ]), 200
