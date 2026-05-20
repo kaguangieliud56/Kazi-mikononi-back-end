@@ -11,6 +11,7 @@ from itsdangerous import URLSafeTimedSerializer
 from itsdangerous.exc import SignatureExpired, BadSignature
 from flask import current_app
 from modules.auth.resend_email import send_verification_email
+from datetime import timedelta
 
 def generate_token(email):
     serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
@@ -127,8 +128,9 @@ def register_user(data):
         # CREATE LOGIN TOKEN
         # -------------------------
         access_token = create_access_token(
-            identity=str(user.id)
-        )
+        identity=str(user.id),
+        expires_delta=timedelta(days=7)
+    )
 
         return {
             "message": "User created successfully. Please verify your email.",
