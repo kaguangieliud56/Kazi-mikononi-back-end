@@ -55,6 +55,9 @@ def create_app():
     from realtime.socket import init_socket
     init_socket(app)
 
+    from modules.payments.routes import payments_bp
+    app.register_blueprint(payments_bp)
+
     @app.route("/")
     def home():
         return {
