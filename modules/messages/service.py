@@ -1,8 +1,11 @@
 from extensions import db
 from models.message import Message
 from models.user import User
+from sqlalchemy import or_, and_
+
 
 def send_message(sender_id, data):
+
     receiver_id = data.get("receiver_id")
     content = data.get("content")
 
@@ -10,6 +13,7 @@ def send_message(sender_id, data):
         return None, "receiver_id and content are required"
 
     receiver = User.query.get(receiver_id)
+
     if not receiver:
         return None, "Receiver not found"
 
@@ -21,32 +25,40 @@ def send_message(sender_id, data):
         receiver_id=receiver_id,
         content=content
     )
+
     db.session.add(message)
     db.session.commit()
+
     return message, None
 
+
 def get_conversation(user_id, other_user_id):
+
     other = User.query.get(other_user_id)
+
     if not other:
         return None, "User not found"
 
     messages = Message.query.filter(
-        db.or_(
-            db.and_(
+        or_(
+            and_(
                 Message.sender_id == user_id,
                 Message.receiver_id == other_user_id
             ),
-            db.and_(
+            and_(
                 Message.sender_id == other_user_id,
                 Message.receiver_id == user_id
             )
         )
     ).order_by(Message.created_at.asc()).all()
+
     return messages, None
 
+
 def get_my_conversations(user_id):
+
     messages = Message.query.filter(
-        db.or_(
+        or_(
             Message.sender_id == user_id,
             Message.receiver_id == user_id
         )
@@ -54,13 +66,17 @@ def get_my_conversations(user_id):
 
     seen = set()
     conversations = []
+
     for m in messages:
         other_id = m.receiver_id if m.sender_id == user_id else m.sender_id
+
         if other_id not in seen:
             seen.add(other_id)
+
             conversations.append({
                 "other_user_id": other_id,
                 "last_message": m.content,
                 "created_at": m.created_at.isoformat()
             })
+
     return conversations

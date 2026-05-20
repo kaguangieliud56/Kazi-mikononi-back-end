@@ -5,9 +5,27 @@ class WorkerSkill(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    worker_id = db.Column(db.Integer, db.ForeignKey("worker_profiles.id"), nullable=False)
-    skill_id = db.Column(db.Integer, db.ForeignKey("skills.id"), nullable=False)
+    worker_id = db.Column(
+        db.Integer,
+        db.ForeignKey("worker_profiles.id"),
+        nullable=False
+    )
+
+    skill_id = db.Column(
+        db.Integer,
+        db.ForeignKey("skills.id"),
+        nullable=False
+    )
 
     __table_args__ = (
-        db.UniqueConstraint("worker_id", "skill_id", name="unique_worker_skill"),
+        db.UniqueConstraint(
+            "worker_id",
+            "skill_id",
+            name="unique_worker_skill"
+        ),
+    )
+
+    skill = db.relationship(
+        "Skill",
+        back_populates="worker_skills"
     )

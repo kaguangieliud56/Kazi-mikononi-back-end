@@ -1,10 +1,12 @@
 from . import auth_bp
 
 from flask import request, jsonify
-
+from models.user import User
+from models.worker_profile import WorkerProfile
 from flask_jwt_extended import (
     jwt_required,
-    get_jwt
+    get_jwt,
+    get_jwt_identity
 )
 
 from .service import (
@@ -13,6 +15,26 @@ from .service import (
     logout_user,
     verify_email
 )
+
+@auth_bp.route("/me", methods=["GET"])
+@jwt_required()
+def get_me():
+    user_id = get_jwt_identity()
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return {"error": "User not found"}, 404
+
+    profile = None
+    if user.role == "worker":
+        profile = WorkerProfile.query.filter_by(user_id=user_id).first()
+
+    return jsonify({
+        "user": user.to_dict(),
+        "profile": profile.to_dict() if profile else None
+    }), 200
+
 
 @auth_bp.route("/register", methods=["POST"])
 def register():

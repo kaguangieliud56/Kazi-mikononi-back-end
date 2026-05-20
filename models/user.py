@@ -19,23 +19,23 @@ class User(db.Model):
     # CONTACT / PROFILE INFO
     phone = db.Column(db.String(20), unique=True)
     location = db.Column(db.String(120))
-    profile_image = db.Column(db.String(255))
-
+    
     # OPTIONAL WORKER INFO (not duplicated skills here)
-    bio = db.Column(db.Text, nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
 
     # TIMESTAMP
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # RELATIONSHIPS
-    jobs = db.relationship("Job", backref="client", lazy=True)
+    jobs = db.relationship("Job", back_populates="client")
 
     applications = db.relationship("Application", backref="applicant", lazy=True)
 
     messages = db.relationship("Message", backref="sender", lazy=True)
 
     ratings = db.relationship("Rating", backref="user", lazy=True)
+
+    
 
     # IMPORTANT: skills handled via WorkerSkill table (NOT here)
 
@@ -47,7 +47,5 @@ class User(db.Model):
             "role": self.role,
             "phone": self.phone,
             "location": self.location,
-            "bio": self.bio,
-            "profile_image": self.profile_image,
             "is_verified": self.is_verified,
         }

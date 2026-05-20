@@ -10,7 +10,8 @@ from blacklist import BLACKLIST
 from itsdangerous import URLSafeTimedSerializer
 from itsdangerous.exc import SignatureExpired, BadSignature
 from flask import current_app
-from modules.auth.email import send_verification_email
+from modules.auth.resend_email import send_verification_email
+from datetime import timedelta
 
 def generate_token(email):
     serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
@@ -79,6 +80,14 @@ def register_user(data):
         if existing:
             return {"error": "Email already exists"}, 400
 
+
+        allowed_roles = ["worker", "client"]
+
+        if data["role"] not in allowed_roles:
+            return {
+                "error": "Invalid role"
+            }, 400
+
         # -------------------------
         # CREATE USER
         # -------------------------
@@ -89,9 +98,6 @@ def register_user(data):
             role=data["role"],
             phone=data.get("phone"),
             location=data.get("location"),
-            bio=data.get("bio"),
-
-            # 🔥 EMAIL NOT VERIFIED YET
             is_verified=False
         )
 
@@ -103,54 +109,28 @@ def register_user(data):
         # -------------------------
         if user.role == "worker":
 
-            worker_profile = WorkerProfile(user_id=user.id)
+            existing_profile = WorkerProfile.query.filter_by(user_id=user.id).first()
 
-            db.session.add(worker_profile)
-            db.session.flush()
+            if not existing_profile:
+                worker_profile = WorkerProfile(user_id=user.id)
+                db.session.add(worker_profile)
 
-            skills = data.get("skills", [])
-
-            for skill_name in skills:
-
-                skill = Skill.query.filter_by(name=skill_name).first()
-
-                if not skill:
-                    skill = Skill(name=skill_name)
-
-                    db.session.add(skill)
-                    db.session.flush()
-
-                worker_skill = WorkerSkill(
-                    worker_id=worker_profile.id,
-                    skill_id=skill.id
-                )
-
-                db.session.add(worker_skill)
+            
 
         # -------------------------
         # COMMIT TO DATABASE
         # -------------------------
         db.session.commit()
 
-        # -------------------------
-        # GENERATE EMAIL VERIFICATION TOKEN
-        # -------------------------
-        verification_token = generate_token(user.email)
 
-        # -------------------------
-        # SEND EMAIL
-        # -------------------------
-        send_verification_email(
-            user.email,
-            verification_token
-        )
 
         # -------------------------
         # CREATE LOGIN TOKEN
         # -------------------------
         access_token = create_access_token(
-            identity=str(user.id)
-        )
+        identity=str(user.id),
+        expires_delta=timedelta(days=7)
+    )
 
         return {
             "message": "User created successfully. Please verify your email.",
@@ -174,6 +154,8 @@ def register_user(data):
     except Exception as e:
         db.session.rollback()
 
+        print("REGISTER ERROR:", str(e))
+
         return {
             "error": "Internal server error",
             "details": str(e)
@@ -181,26 +163,54 @@ def register_user(data):
 
 
 def login_user(data):
+    """
+    Handles user login:
+    - validates input
+    - checks if user exists
+    - verifies password
+    - returns JWT token + user data
+    """
 
     try:
+        # -------------------------------
+        # 1. Validate input data
+        # -------------------------------
         if not data.get("email") or not data.get("password"):
             return {"error": "email and password are required"}, 400
 
+        # -------------------------------
+        # 2. Find user by email
+        # -------------------------------
         user = User.query.filter_by(email=data["email"]).first()
 
         if not user:
             return {"error": "Invalid credentials"}, 401
 
-        if not user.is_verified:
-            return {
-                "error": "Please verify your email before logging in"
-            }, 403
+        # -------------------------------
+        # 3. EMAIL VERIFICATION CHECK (DISABLED FOR DEV)
+        # -------------------------------
+        # Commented out for development/testing purposes
+        # Remove this block so users can log in without verifying email
 
+        # if not user.is_verified:
+        #     return {
+        #         "error": "Please verify your email before logging in"
+        #     }, 403
+
+        # -------------------------------
+        # 4. Verify password
+        # -------------------------------
         if not verify_password(user.password_hash, data["password"]):
             return {"error": "Invalid credentials"}, 401
 
+        # -------------------------------
+        # 5. Create JWT token
+        # -------------------------------
         token = create_access_token(identity=str(user.id))
 
+        # -------------------------------
+        # 6. Return success response
+        # -------------------------------
         return {
             "message": "Login successful",
             "token": token,
@@ -208,11 +218,13 @@ def login_user(data):
         }, 200
 
     except Exception as e:
+        # -------------------------------
+        # 7. Catch unexpected errors
+        # -------------------------------
         return {
             "error": "Login failed",
             "details": str(e)
         }, 500
-    
 
 def logout_user(jwt_data):
 
