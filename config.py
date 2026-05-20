@@ -3,8 +3,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -18,3 +21,10 @@ class Config:
 
     FRONTEND_URL = os.getenv("FRONTEND_URL")
     BACKEND_URL = os.getenv("BACKEND_URL")
+
+    # -------------------------
+    # IMAGE UPLOADS
+    # -------------------------
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "static/uploads")
+
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024

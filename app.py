@@ -9,10 +9,18 @@ from extensions import (
     mail
 )
 from blacklist import BLACKLIST
+import os
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        static_folder="static"
+    )
+
+    app.config.from_object(Config)
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     app.config.from_object(Config)
 
     db.init_app(app)

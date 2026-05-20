@@ -9,10 +9,21 @@ from modules.jobs.service import (
     delete_job
 )
 
-from models.job import Job   # IMPORTANT FIX (needed for /mine)
+from models.job import Job 
+from flask import current_app
+from werkzeug.utils import secure_filename
+import os
+import uuid  # IMPORTANT FIX (needed for /mine)
 
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/jobs")
 
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+def allowed_file(filename):
+    return (
+        "." in filename and
+        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    )
 
 # =========================
 # CREATE JOB
@@ -191,3 +202,46 @@ def get_my_jobs():
         }
         for j in jobs
     ]), 200
+
+
+# =========================================
+# UPLOAD JOB IMAGE
+# POST /jobs/upload-image
+# =========================================
+@jobs_bp.route("/upload-image", methods=["POST"])
+@jwt_required()
+def upload_job_image():
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+
+    file = request.files["image"]
+
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({
+            "error": "Invalid file type"
+        }), 400
+
+    filename = secure_filename(file.filename)
+
+    unique_filename = f"{uuid.uuid4()}_{filename}"
+
+    upload_path = os.path.join(
+        current_app.config["UPLOAD_FOLDER"],
+        unique_filename
+    )
+
+    file.save(upload_path)
+
+    image_url = (
+        f"{current_app.config['BACKEND_URL']}"
+        f"/static/uploads/{unique_filename}"
+    )
+
+    return jsonify({
+        "message": "Image uploaded successfully",
+        "image_url": image_url
+    }), 201
