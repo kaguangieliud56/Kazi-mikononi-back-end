@@ -36,6 +36,8 @@ class Job(db.Model):
     # relationships
     applications = db.relationship("Application", backref="job", lazy=True)
 
+    client = db.relationship("User", backref="jobs")
+
     def to_dict(self):
         from models.user import User
 

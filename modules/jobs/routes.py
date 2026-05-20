@@ -75,8 +75,14 @@ def list_jobs():
             "contact_method": j.contact_method,
             "image_url": j.image_url,
             "client_id": j.client_id,
+
+            # ✅ ADD THIS
+            "employer": j.client.full_name if j.client else "Unknown",
+            "employer_email": j.client.email if j.client else None,
+
             "created_at": j.created_at.isoformat()
-        } for j in jobs
+        }
+        for j in jobs
     ]), 200
 
 
