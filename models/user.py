@@ -27,13 +27,15 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # RELATIONSHIPS
-    jobs = db.relationship("Job", backref="client", lazy=True)
+    jobs = db.relationship("Job", back_populates="client")
 
     applications = db.relationship("Application", backref="applicant", lazy=True)
 
     messages = db.relationship("Message", backref="sender", lazy=True)
 
     ratings = db.relationship("Rating", backref="user", lazy=True)
+
+    
 
     # IMPORTANT: skills handled via WorkerSkill table (NOT here)
 
