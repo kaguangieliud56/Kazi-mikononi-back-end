@@ -33,10 +33,10 @@ def create_app():
     # SOCKET + CORS + MAIL
     # -------------------------
     socketio.init_app(
-    app,
-    cors_allowed_origins="*",
-    async_mode="threading"
-)
+        app,
+        cors_allowed_origins="*",
+        async_mode="eventlet"
+    )
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     mail.init_app(app)
 
