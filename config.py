@@ -7,6 +7,7 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
