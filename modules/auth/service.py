@@ -10,26 +10,20 @@ from blacklist import BLACKLIST
 from itsdangerous import URLSafeTimedSerializer
 from itsdangerous.exc import SignatureExpired, BadSignature
 from flask import current_app
-from modules.auth.email import send_verification_email
 from datetime import timedelta
 
-
-# =====================================================
-# TOKEN GENERATION
-# =====================================================
 def generate_token(email):
     serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
     return serializer.dumps(email, salt="email-confirm")
 
-
-# =====================================================
-# VERIFY EMAIL
-# =====================================================
 def verify_email(token):
 
-    serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    serializer = URLSafeTimedSerializer(
+        current_app.config["SECRET_KEY"]
+    )
 
     try:
+
         email = serializer.loads(
             token,
             salt="email-confirm",
@@ -42,41 +36,56 @@ def verify_email(token):
             return {"error": "User not found"}, 404
 
         if user.is_verified:
-            return {"message": "Email already verified"}, 200
+            return {
+                "message": "Email already verified"
+            }, 200
 
         user.is_verified = True
+
         db.session.commit()
 
-        return {"message": "Email verified successfully"}, 200
+        return {
+            "message": "Email verified successfully"
+        }, 200
 
     except SignatureExpired:
-        return {"error": "Verification link expired"}, 400
+        return {
+            "error": "Verification link expired"
+        }, 400
 
     except BadSignature:
-        return {"error": "Invalid verification token"}, 400
-
-
-# =====================================================
-# REGISTER USER (YOUR CODE + FIXED EMAIL LINK)
-# =====================================================
+        return {
+            "error": "Invalid verification token"
+        }, 400
+    
+    
 def register_user(data):
 
     try:
+        # -------------------------
+        # BASIC VALIDATION
+        # -------------------------
         required_fields = ["full_name", "email", "password", "role"]
 
         for field in required_fields:
             if not data.get(field):
                 return {"error": f"{field} is required"}, 400
 
+        # -------------------------
+        # CHECK EXISTING USER
+        # -------------------------
         existing = User.query.filter_by(email=data["email"]).first()
 
         if existing:
             return {"error": "Email already exists"}, 400
 
+
         allowed_roles = ["worker", "client"]
 
         if data["role"] not in allowed_roles:
-            return {"error": "Invalid role"}, 400
+            return {
+                "error": "Invalid role"
+            }, 400
 
         # -------------------------
         # CREATE USER
@@ -105,34 +114,22 @@ def register_user(data):
                 worker_profile = WorkerProfile(user_id=user.id)
                 db.session.add(worker_profile)
 
+            
+
+        # -------------------------
+        # COMMIT TO DATABASE
+        # -------------------------
         db.session.commit()
 
-        # =====================================================
-        # EMAIL VERIFICATION (FIXED FOR RENDER DEPLOYMENT)
-        # =====================================================
 
-        token = generate_token(user.email)
 
-        # 🔥 IMPORTANT FIX: USE YOUR DEPLOYED BACKEND URL
-        verification_link = (
-            f"https://kazi-mikononi-back-end.onrender.com/auth/verify/{token}"
-        )
-
-        email_sent = send_verification_email(user.email, verification_link)
-
-        if not email_sent:
-            return {
-                "error": "User created but verification email failed to send"
-            }, 500
-
-        # =====================================================
-        # LOGIN TOKEN (YOU KEPT THIS - NOT REMOVED)
-        # =====================================================
-
+        # -------------------------
+        # CREATE LOGIN TOKEN
+        # -------------------------
         access_token = create_access_token(
-            identity=str(user.id),
-            expires_delta=timedelta(days=7)
-        )
+        identity=str(user.id),
+        expires_delta=timedelta(days=7)
+    )
 
         return {
             "message": "User created successfully. Please verify your email.",
@@ -140,6 +137,9 @@ def register_user(data):
             "user": user.to_dict()
         }, 201
 
+    # -------------------------
+    # HANDLE UNIQUE CONSTRAINTS
+    # -------------------------
     except IntegrityError:
         db.session.rollback()
 
@@ -147,6 +147,9 @@ def register_user(data):
             "error": "Database constraint violation (email or phone already exists)"
         }, 400
 
+    # -------------------------
+    # HANDLE GENERAL ERRORS
+    # -------------------------
     except Exception as e:
         db.session.rollback()
 
@@ -158,29 +161,55 @@ def register_user(data):
         }, 500
 
 
-# =====================================================
-# LOGIN USER (UNCHANGED LOGIC)
-# =====================================================
 def login_user(data):
+    """
+    Handles user login:
+    - validates input
+    - checks if user exists
+    - verifies password
+    - returns JWT token + user data
+    """
 
     try:
+        # -------------------------------
+        # 1. Validate input data
+        # -------------------------------
         if not data.get("email") or not data.get("password"):
             return {"error": "email and password are required"}, 400
 
+        # -------------------------------
+        # 2. Find user by email
+        # -------------------------------
         user = User.query.filter_by(email=data["email"]).first()
 
         if not user:
             return {"error": "Invalid credentials"}, 401
 
-        # EMAIL CHECK (YOU ALREADY HAD THIS GOOD)
-        if not user.is_verified:
-            return {"error": "Please verify your email before logging in"}, 403
+        # -------------------------------
+        # 3. EMAIL VERIFICATION CHECK (DISABLED FOR DEV)
+        # -------------------------------
+        # Commented out for development/testing purposes
+        # Remove this block so users can log in without verifying email
 
+        # if not user.is_verified:
+        #     return {
+        #         "error": "Please verify your email before logging in"
+        #     }, 403
+
+        # -------------------------------
+        # 4. Verify password
+        # -------------------------------
         if not verify_password(user.password_hash, data["password"]):
             return {"error": "Invalid credentials"}, 401
 
+        # -------------------------------
+        # 5. Create JWT token
+        # -------------------------------
         token = create_access_token(identity=str(user.id))
 
+        # -------------------------------
+        # 6. Return success response
+        # -------------------------------
         return {
             "message": "Login successful",
             "token": token,
@@ -188,18 +217,18 @@ def login_user(data):
         }, 200
 
     except Exception as e:
+        # -------------------------------
+        # 7. Catch unexpected errors
+        # -------------------------------
         return {
             "error": "Login failed",
             "details": str(e)
         }, 500
 
-
-# =====================================================
-# LOGOUT USER (UNCHANGED)
-# =====================================================
 def logout_user(jwt_data):
 
     jti = jwt_data["jti"]
+
     BLACKLIST.add(jti)
 
     return {
