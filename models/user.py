@@ -12,32 +12,40 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    # ROLE SYSTEM (core of your app)
+    # ROLE
     role = db.Column(db.String(20), nullable=False)
-    # client | worker
 
-    # CONTACT / PROFILE INFO
+    # CONTACT / PROFILE
     phone = db.Column(db.String(20), unique=True)
     location = db.Column(db.String(120))
-    
-    # OPTIONAL WORKER INFO (not duplicated skills here)
     is_verified = db.Column(db.Boolean, default=False)
 
-    # TIMESTAMP
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # RELATIONSHIPS
+    # =========================
+    # RELATIONSHIPS (FIXED)
+    # =========================
+
     jobs = db.relationship("Job", back_populates="client")
 
     applications = db.relationship("Application", backref="applicant", lazy=True)
 
-    messages = db.relationship("Message", backref="sender", lazy=True)
-
     ratings = db.relationship("Rating", backref="user", lazy=True)
 
-    
+    # MESSAGES (IMPORTANT FIX)
+    sent_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.sender_id",
+        back_populates="sender",
+        lazy=True
+    )
 
-    # IMPORTANT: skills handled via WorkerSkill table (NOT here)
+    received_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.receiver_id",
+        back_populates="receiver",
+        lazy=True
+    )
 
     def to_dict(self):
         return {

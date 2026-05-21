@@ -1,28 +1,71 @@
 from extensions import db
+
 from models.message import Message
 from models.user import User
-from sqlalchemy import or_, and_
+from models.conversation import Conversation
+
+from sqlalchemy import or_
 
 
+# =========================================
+# CREATE OR GET CONVERSATION
+# =========================================
+def get_or_create_conversation(user1_id, user2_id):
+
+    conversation = Conversation.query.filter(
+
+        (
+            (Conversation.user1_id == user1_id) &
+            (Conversation.user2_id == user2_id)
+        )
+
+        |
+
+        (
+            (Conversation.user1_id == user2_id) &
+            (Conversation.user2_id == user1_id)
+        )
+
+    ).first()
+
+    # already exists
+    if conversation:
+        return conversation
+
+    # create new
+    conversation = Conversation(
+        user1_id=user1_id,
+        user2_id=user2_id
+    )
+
+    db.session.add(conversation)
+    db.session.commit()
+
+    return conversation
+
+
+# =========================================
+# SEND MESSAGE
+# =========================================
 def send_message(sender_id, data):
 
     receiver_id = data.get("receiver_id")
     content = data.get("content")
 
     if not receiver_id or not content:
-        return None, "receiver_id and content are required"
+        return None, "Missing fields"
 
-    receiver = User.query.get(receiver_id)
+    # get chat room
+    conversation = get_or_create_conversation(
+        sender_id,
+        receiver_id
+    )
 
-    if not receiver:
-        return None, "Receiver not found"
-
-    if sender_id == receiver_id:
-        return None, "You cannot message yourself"
-
+    # create message
     message = Message(
         sender_id=sender_id,
         receiver_id=receiver_id,
+        conversation_id=conversation.id,
         content=content
     )
 
@@ -32,51 +75,91 @@ def send_message(sender_id, data):
     return message, None
 
 
+# =========================================
+# GET CONVERSATION MESSAGES
+# =========================================
 def get_conversation(user_id, other_user_id):
 
-    other = User.query.get(other_user_id)
+    conversation = get_or_create_conversation(
+        user_id,
+        other_user_id
+    )
 
-    if not other:
-        return None, "User not found"
-
-    messages = Message.query.filter(
-        or_(
-            and_(
-                Message.sender_id == user_id,
-                Message.receiver_id == other_user_id
-            ),
-            and_(
-                Message.sender_id == other_user_id,
-                Message.receiver_id == user_id
-            )
-        )
-    ).order_by(Message.created_at.asc()).all()
+    messages = Message.query.filter_by(
+        conversation_id=conversation.id
+    ).order_by(
+        Message.created_at.asc()
+    ).all()
 
     return messages, None
 
 
+# =========================================
+# GET CONTACT LIST / SIDEBAR
+# =========================================
 def get_my_conversations(user_id):
 
-    messages = Message.query.filter(
-        or_(
-            Message.sender_id == user_id,
-            Message.receiver_id == user_id
+    conversations = Conversation.query.filter(
+
+        (Conversation.user1_id == user_id)
+
+        |
+
+        (Conversation.user2_id == user_id)
+
+    ).order_by(
+        Conversation.created_at.desc()
+    ).all()
+
+    result = []
+
+    for conversation in conversations:
+
+        # determine other user
+        other_user_id = (
+            conversation.user2_id
+            if conversation.user1_id == user_id
+            else conversation.user1_id
         )
-    ).order_by(Message.created_at.desc()).all()
 
-    seen = set()
-    conversations = []
+        # fetch user info
+        other_user = User.query.get(other_user_id)
 
-    for m in messages:
-        other_id = m.receiver_id if m.sender_id == user_id else m.sender_id
+        # latest message
+        last_message = Message.query.filter_by(
+            conversation_id=conversation.id
+        ).order_by(
+            Message.created_at.desc()
+        ).first()
 
-        if other_id not in seen:
-            seen.add(other_id)
+        result.append({
 
-            conversations.append({
-                "other_user_id": other_id,
-                "last_message": m.content,
-                "created_at": m.created_at.isoformat()
-            })
+            "conversation_id": conversation.id,
 
-    return conversations
+            "other_user_id": other_user_id,
+
+            "name": (
+                other_user.name
+                if other_user
+                else f"User {other_user_id}"
+            ),
+
+            "avatar": (
+                other_user.profile_image
+                if other_user and hasattr(other_user, "profile_image")
+                else None
+            ),
+
+            "last_message": (
+                last_message.content
+                if last_message
+                else ""
+            ),
+
+            "created_at": conversation.created_at.isoformat()
+
+        })
+
+    return {
+        "conversations": result
+    }
