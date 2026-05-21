@@ -9,6 +9,7 @@ from extensions import (
     mail
 )
 from blacklist import BLACKLIST
+from flask_socketio import SocketIO
 import os
 
 
@@ -66,7 +67,12 @@ def create_app():
     # -------------------------
     # SOCKET + CORS + MAIL
     # -------------------------
-    socketio.init_app(app, cors_allowed_origins="*")
+    socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading",
+    transports=["polling"]
+)
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     mail.init_app(app)
 
