@@ -16,10 +16,13 @@ def create_app():
     app = Flask(__name__, static_folder="static")
 
     # -------------------------
-    # CONFIG
+    # LOAD CONFIG FIRST
     # -------------------------
     app.config.from_object(Config)
 
+    # -------------------------
+    # NOW SAFE TO USE CONFIG
+    # -------------------------
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     # -------------------------
@@ -30,30 +33,42 @@ def create_app():
     jwt.init_app(app)
 
     # -------------------------
-    # SOCKET + CORS + MAIL
-    # -------------------------
-    socketio.init_app(app, async_mode="eventlet")
-    cors.init_app(app, resources={r"/*": {"origins": "*"}})
-    mail.init_app(app)
-
-    # -------------------------
     # JWT ERROR HANDLERS
     # -------------------------
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
-        return jsonify({"error": "Token expired", "code": "token_expired"}), 401
+        return jsonify({
+            "error": "Token expired",
+            "code": "token_expired"
+        }), 401
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        return jsonify({"error": "Invalid token", "code": "token_invalid"}), 401
+        return jsonify({
+            "error": "Invalid token",
+            "code": "token_invalid"
+        }), 401
 
     @jwt.unauthorized_loader
     def missing_token_callback(error):
-        return jsonify({"error": "Authorization token is missing", "code": "token_missing"}), 401
+        return jsonify({
+            "error": "Authorization token is missing",
+            "code": "token_missing"
+        }), 401
 
     @jwt.revoked_token_loader
     def revoked_token_callback(jwt_header, jwt_payload):
-        return jsonify({"error": "Token has been revoked", "code": "token_revoked"}), 401
+        return jsonify({
+            "error": "Token has been revoked",
+            "code": "token_revoked"
+        }), 401
+
+    # -------------------------
+    # SOCKET + CORS + MAIL
+    # -------------------------
+    socketio.init_app(app, cors_allowed_origins="*")
+    cors.init_app(app, resources={r"/*": {"origins": "*"}})
+    mail.init_app(app)
 
     # -------------------------
     # TOKEN BLACKLIST CHECK
@@ -95,7 +110,7 @@ def create_app():
     # SOCKET EVENTS
     # -------------------------
     from realtime.socket import init_socket
-    init_socket(socketio)
+    init_socket(app)
 
     # -------------------------
     # HOME ROUTE
@@ -103,12 +118,5 @@ def create_app():
     @app.route("/")
     def home():
         return {"message": "Kazi Mikononi backend running"}
-
-    # -------------------------
-    # HEALTH CHECK
-    # -------------------------
-    @app.route("/ping")
-    def ping():
-        return jsonify({"status": "alive"})
 
     return app
