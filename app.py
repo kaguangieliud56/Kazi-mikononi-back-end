@@ -67,14 +67,7 @@ def create_app():
     # -------------------------
     # SOCKET + CORS + MAIL
     # -------------------------
-    socketio = SocketIO(
-        app,
-        cors_allowed_origins="*",
-        async_mode="threading",
-        logger=True,
-        engineio_logger=True,
-        transports=["polling"]
-    )
+    socketio.init_app(app)
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     mail.init_app(app)
 
