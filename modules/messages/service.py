@@ -2,8 +2,7 @@ from extensions import db
 from models.message import Message
 from models.user import User
 from models.conversation import Conversation
-
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 
 
 # =========================================
@@ -13,14 +12,8 @@ def get_or_create_conversation(user1_id, user2_id):
 
     conversation = Conversation.query.filter(
         or_(
-            and_(
-                Conversation.user1_id == user1_id,
-                Conversation.user2_id == user2_id
-            ),
-            and_(
-                Conversation.user1_id == user2_id,
-                Conversation.user2_id == user1_id
-            )
+            (Conversation.user1_id == user1_id) & (Conversation.user2_id == user2_id),
+            (Conversation.user1_id == user2_id) & (Conversation.user2_id == user1_id)
         )
     ).first()
 
@@ -79,42 +72,73 @@ def get_conversation(user_id, other_user_id):
 
 
 # =========================================
-# GET MY CONVERSATIONS (FIXED OUTPUT SHAPE)
+# GET MY CONVERSATIONS (WHATSAPP STYLE)
 # =========================================
 def get_my_conversations(user_id):
 
+    # -------------------------------
+    # STEP 1: Get real conversations
+    # -------------------------------
     conversations = Conversation.query.filter(
         or_(
             Conversation.user1_id == user_id,
             Conversation.user2_id == user_id
         )
-    ).order_by(Conversation.created_at.desc()).all()
+    ).all()
 
     result = []
+    conversation_users = set()
 
-    for conversation in conversations:
+    # -------------------------------
+    # STEP 2: Format existing chats
+    # -------------------------------
+    for c in conversations:
 
         other_user_id = (
-            conversation.user2_id
-            if conversation.user1_id == user_id
-            else conversation.user1_id
+            c.user2_id if c.user1_id == user_id else c.user1_id
         )
+
+        conversation_users.add(other_user_id)
 
         other_user = User.query.get(other_user_id)
 
         last_message = Message.query.filter_by(
-            conversation_id=conversation.id
+            conversation_id=c.id
         ).order_by(Message.created_at.desc()).first()
 
         result.append({
-            "conversation_id": conversation.id,
+            "conversation_id": c.id,
             "other_user_id": other_user_id,
             "name": other_user.full_name if other_user else f"User {other_user_id}",
             "avatar": getattr(other_user, "profile_image", None),
-            "last_message": last_message.content if last_message else "",
-            "created_at": conversation.created_at.isoformat() if conversation.created_at else None
+            "last_message": last_message.content if last_message else "Start chatting",
+            "created_at": c.created_at.isoformat() if c.created_at else None
         })
 
+    # -------------------------------
+    # STEP 3: Add USERS (no chat yet)
+    # -------------------------------
+    users = User.query.filter(
+        User.id != user_id
+    ).limit(50).all()   # 🔥 scalability fix
+
+    for user in users:
+
+        if user.id in conversation_users:
+            continue
+
+        result.append({
+            "conversation_id": None,
+            "other_user_id": user.id,
+            "name": user.full_name,
+            "avatar": getattr(user, "profile_image", None),
+            "last_message": "No messages yet",
+            "created_at": None
+        })
+
+    # -------------------------------
+    # STEP 4: Return unified list
+    # -------------------------------
     return {
         "conversations": result
     }

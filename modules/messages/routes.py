@@ -1,9 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from models.message import Message
-from models.conversation import Conversation
-
 from modules.messages.service import (
     send_message,
     get_conversation,
@@ -25,19 +22,15 @@ messages_bp = Blueprint(
 def send():
 
     sender_id = int(get_jwt_identity())
-
     data = request.get_json()
 
     message, error = send_message(sender_id, data)
 
     if error:
-        return jsonify({
-            "error": error
-        }), 400
+        return jsonify({"error": error}), 400
 
     return jsonify({
         "message": "Message sent successfully",
-
         "data": {
             "id": message.id,
             "sender_id": message.sender_id,
@@ -58,19 +51,13 @@ def conversation(other_user_id):
 
     user_id = int(get_jwt_identity())
 
-    messages, error = get_conversation(
-        user_id,
-        other_user_id
-    )
+    messages, error = get_conversation(user_id, other_user_id)
 
     if error:
-        return jsonify({
-            "error": error
-        }), 404
+        return jsonify({"error": error}), 404
 
     return jsonify({
         "messages": [
-
             {
                 "id": m.id,
                 "sender_id": m.sender_id,
@@ -79,7 +66,6 @@ def conversation(other_user_id):
                 "content": m.content,
                 "created_at": m.created_at.isoformat()
             }
-
             for m in messages
         ]
     }), 200
