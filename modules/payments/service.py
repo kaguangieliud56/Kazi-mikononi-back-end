@@ -65,7 +65,7 @@ def initiate_stk_push(client_id, job_id, phone_number):
         transaction = Transaction(
             job_id=job_id,
             client_id=client_id,
-            worker_id=0,
+            worker_id=None,
             amount=job.budget,
             status="pending",
             checkout_request_id=data.get("CheckoutRequestID"),

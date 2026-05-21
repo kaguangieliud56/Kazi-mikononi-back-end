@@ -57,10 +57,12 @@ def transaction_status(job_id):
     transaction, error = get_job_transaction(job_id, user_id)
     if error:
         return jsonify({"error": error}), 404
+
     return jsonify({
-        "job_id": job_id,
-        "amount": transaction.amount,
-        "status": transaction.status,
-        "mpesa_code": transaction.mpesa_code,
-        "created_at": transaction.created_at.isoformat()
-    }), 200
+    "job_id": job_id,
+    "amount": transaction.amount,
+    "status": transaction.status,
+    "mpesa_code": transaction.mpesa_code,
+    "checkout_request_id": transaction.checkout_request_id,
+    "created_at": transaction.created_at.isoformat()
+    }), 200 
