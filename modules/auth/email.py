@@ -2,21 +2,27 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
+
 def send_verification_email(to_email, link):
+
     message = Mail(
-        from_email='your_verified_sender@gmail.com',
+        from_email="your_verified_sender@gmail.com",
         to_emails=to_email,
-        subject='Verify your account',
-        html_content=f'''
+        subject="Verify your account",
+        html_content=f"""
             <h2>Verify your account</h2>
-            <p>Click below to verify:</p>
-            <a href="{link}">Verify Email</a>
-        '''
+            <a href="{link}">Click here to verify</a>
+        """
     )
 
     try:
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-        sg.send(message)
-        print("Email sent!")
+        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        response = sg.send(message)
+
+        print("SendGrid status:", response.status_code)
+
+        return True
+
     except Exception as e:
-        print("Error:", e)
+        print("SENDGRID ERROR:", str(e))
+        return False
