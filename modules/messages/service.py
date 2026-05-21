@@ -3,7 +3,7 @@ from models.message import Message
 from models.user import User
 from models.conversation import Conversation
 
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 
 # =========================================
@@ -13,11 +13,11 @@ def get_or_create_conversation(user1_id, user2_id):
 
     conversation = Conversation.query.filter(
         or_(
-            db.and_(
+            and_(
                 Conversation.user1_id == user1_id,
                 Conversation.user2_id == user2_id
             ),
-            db.and_(
+            and_(
                 Conversation.user1_id == user2_id,
                 Conversation.user2_id == user1_id
             )
@@ -73,15 +73,13 @@ def get_conversation(user_id, other_user_id):
 
     messages = Message.query.filter_by(
         conversation_id=conversation.id
-    ).order_by(
-        Message.created_at.asc()
-    ).all()
+    ).order_by(Message.created_at.asc()).all()
 
     return messages, None
 
 
 # =========================================
-# GET MY CONVERSATIONS
+# GET MY CONVERSATIONS (FIXED OUTPUT SHAPE)
 # =========================================
 def get_my_conversations(user_id):
 
@@ -90,9 +88,7 @@ def get_my_conversations(user_id):
             Conversation.user1_id == user_id,
             Conversation.user2_id == user_id
         )
-    ).order_by(
-        Conversation.created_at.desc()
-    ).all()
+    ).order_by(Conversation.created_at.desc()).all()
 
     result = []
 
@@ -108,37 +104,15 @@ def get_my_conversations(user_id):
 
         last_message = Message.query.filter_by(
             conversation_id=conversation.id
-        ).order_by(
-            Message.created_at.desc()
-        ).first()
+        ).order_by(Message.created_at.desc()).first()
 
         result.append({
             "conversation_id": conversation.id,
             "other_user_id": other_user_id,
-
-            "name": (
-                other_user.full_name
-                if other_user and hasattr(other_user, "full_name")
-                else f"User {other_user_id}"
-            ),
-
-            "avatar": (
-                other_user.profile_image
-                if other_user and hasattr(other_user, "profile_image")
-                else None
-            ),
-
-            "last_message": (
-                last_message.content
-                if last_message
-                else ""
-            ),
-
-            "created_at": (
-                conversation.created_at.isoformat()
-                if conversation.created_at
-                else None
-            )
+            "name": other_user.full_name if other_user else f"User {other_user_id}",
+            "avatar": getattr(other_user, "profile_image", None),
+            "last_message": last_message.content if last_message else "",
+            "created_at": conversation.created_at.isoformat() if conversation.created_at else None
         })
 
     return {

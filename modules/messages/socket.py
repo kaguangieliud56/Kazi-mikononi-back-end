@@ -2,7 +2,6 @@ from flask_socketio import join_room, emit
 from flask_jwt_extended import decode_token
 
 from modules.messages.service import send_message
-
 from extensions import socketio
 
 
@@ -11,20 +10,16 @@ from extensions import socketio
 # =========================================
 def get_room_name(user1_id, user2_id):
 
-    smaller = min(user1_id, user2_id)
-    bigger = max(user1_id, user2_id)
-
-    return f"chat_{smaller}_{bigger}"
+    return f"chat_{min(user1_id, user2_id)}_{max(user1_id, user2_id)}"
 
 
 # =========================================
-# JOIN CHAT ROOM
+# JOIN CHAT
 # =========================================
 @socketio.on("join_chat")
 def handle_join_chat(data):
 
     try:
-
         token = data.get("token")
         other_user_id = data.get("other_user_id")
 
@@ -34,33 +29,25 @@ def handle_join_chat(data):
         other_user_id = int(other_user_id)
 
         decoded = decode_token(token)
-
         current_user_id = int(decoded["sub"])
 
-        room = get_room_name(
-            current_user_id,
-            other_user_id
-        )
+        room = get_room_name(current_user_id, other_user_id)
 
         join_room(room)
 
-        emit("joined_room", {
-            "room": room
-        })
+        emit("joined_room", {"room": room})
 
     except Exception as e:
-
         print("SOCKET JOIN ERROR:", str(e))
 
 
 # =========================================
-# SEND MESSAGE
+# SEND MESSAGE (REAL TIME FIXED)
 # =========================================
 @socketio.on("send_message")
 def handle_send_message(data):
 
     try:
-
         token = data.get("token")
         receiver_id = data.get("receiver_id")
         content = data.get("content")
@@ -71,48 +58,30 @@ def handle_send_message(data):
         receiver_id = int(receiver_id)
 
         decoded = decode_token(token)
-
         sender_id = int(decoded["sub"])
 
-        # save message
-        message, error = send_message(
-            sender_id,
-            {
-                "receiver_id": receiver_id,
-                "content": content
-            }
-        )
+        message, error = send_message(sender_id, {
+            "receiver_id": receiver_id,
+            "content": content
+        })
 
         if error:
-
-            emit("message_error", {
-                "error": error
-            })
-
+            emit("message_error", {"error": error})
             return
 
-        room = get_room_name(
-            sender_id,
-            receiver_id
-        )
+        room = get_room_name(sender_id, receiver_id)
 
-        # realtime emit
-        emit(
+        payload = {
+            "id": message.id,
+            "sender_id": message.sender_id,
+            "receiver_id": message.receiver_id,
+            "conversation_id": message.conversation_id,
+            "content": message.content,
+            "created_at": message.created_at.isoformat()
+        }
 
-            "new_message",
-
-            {
-                "id": message.id,
-                "sender_id": message.sender_id,
-                "receiver_id": message.receiver_id,
-                "conversation_id": message.conversation_id,
-                "content": message.content,
-                "created_at": message.created_at.isoformat()
-            },
-
-            room=room
-        )
+        # 🔥 broadcast to BOTH users in room
+        emit("new_message", payload, room=room)
 
     except Exception as e:
-
         print("SOCKET MESSAGE ERROR:", str(e))
