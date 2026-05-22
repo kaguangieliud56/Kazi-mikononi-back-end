@@ -121,7 +121,17 @@ def register_user(data):
         # -------------------------
         db.session.commit()
 
+        # =====================================================
+        # EMAIL VERIFICATION (DISABLED - SendGrid not configured)
+        # =====================================================
 
+        # Auto-verify user since email service is not configured
+        user.is_verified = True
+        db.session.commit()
+
+        # =====================================================
+        # LOGIN TOKEN
+        # =====================================================
 
         # -------------------------
         # CREATE LOGIN TOKEN

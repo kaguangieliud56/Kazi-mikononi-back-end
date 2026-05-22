@@ -6,7 +6,8 @@ from modules.jobs.service import (
     get_all_jobs,
     get_job_by_id,
     update_job,
-    delete_job
+    delete_job,
+    update_job_status
 )
 
 from models.job import Job 
@@ -245,3 +246,31 @@ def upload_job_image():
         "message": "Image uploaded successfully",
         "image_url": image_url
     }), 201
+
+
+# =========================
+# UPDATE JOB STATUS
+# =========================
+@jobs_bp.route("/<int:job_id>/status", methods=["PUT"])
+@jwt_required()
+def update_job_status_endpoint(job_id):
+    client_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    status = data.get("status")
+    if not status:
+        return jsonify({"error": "status is required"}), 400
+
+    job, error = update_job_status(job_id, client_id, status)
+
+    if error:
+        status_code = 404 if error == "Job not found" else 403
+        return jsonify({"error": error}), status_code
+
+    return jsonify({
+        "message": "Job status updated",
+        "job": {
+            "id": job.id,
+            "status": job.status
+        }
+    }), 200

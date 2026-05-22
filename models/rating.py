@@ -18,3 +18,6 @@ class Rating(db.Model):
 
     # who receives rating
     worker_id = db.Column(db.Integer, nullable=False)
+
+    # link rating to specific job
+    job_id = db.Column(db.Integer, db.ForeignKey("jobs.id"), nullable=True)

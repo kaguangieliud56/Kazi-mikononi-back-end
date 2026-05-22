@@ -43,7 +43,7 @@ def update_application_status(application_id, client_id, status):
     if job.client_id != client_id:
         return None, "Unauthorized"
     
-    if status not in ["accepted", "rejected"]:
+    if status not in ["accepted", "rejected", "completed"]:
         return None, "Invalid status"
     
     application.status = status

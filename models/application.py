@@ -25,7 +25,7 @@ class Application(db.Model):
         nullable=False
     )
 
-    # Relationship
+    # Relationships
     user = db.relationship(
         "User",
         back_populates="applications"

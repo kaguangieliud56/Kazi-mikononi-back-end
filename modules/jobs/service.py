@@ -75,3 +75,21 @@ def delete_job(job_id, client_id):
     db.session.delete(job)
     db.session.commit()
     return True, None
+
+
+def update_job_status(job_id, client_id, status):
+    job = Job.query.get(job_id)
+
+    if not job:
+        return None, "Job not found"
+
+    if job.client_id != client_id:
+        return None, "Unauthorized"
+
+    valid_statuses = ["open", "in_progress", "completed", "cancelled"]
+    if status not in valid_statuses:
+        return None, f"Invalid status. Must be one of: {valid_statuses}"
+
+    job.status = status
+    db.session.commit()
+    return job, None
